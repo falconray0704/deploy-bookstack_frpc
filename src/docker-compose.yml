@@ -1,0 +1,63 @@
+version: '3'
+services:
+  bookstack_apache_db:
+    image: mysql:${MYSQL_RELEASE_VERSION:-8.0}
+    container_name: bookstack_apache_db
+    environment:
+    - TZ=Asia/Shanghai
+    - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-password}
+    - MYSQL_DATABASE=${MYSQL_DATABASE:-bookstackapp}
+    - MYSQL_USER=${MYSQL_USER:-bookstack}
+    - MYSQL_PASSWORD=${MYSQL_PASSWORD:-password}
+    volumes:
+    - ${BOOKSTACK_DB_ROOT:-./bookstack_db}/var/lib/mysql:/var/lib/mysql
+    - ${BOOKSTACK_BACKUP:-./bookstack_backup}:/bookstack_backup
+    restart: always
+
+
+  bookstack_apache:
+    image: rayruan/bookstack_apache:${BOOKSTACKAPP_RELEASE_VERSION:-latest}
+    container_name: bookstack_apache
+    depends_on:
+    - bookstack_apache_db
+    environment:
+    - APP_URL=https://bookstack.example.com:4443
+    - ALLOWED_IFRAME_SOURCES="https://*.example.synology.me:4443 https://*.draw.io https://*.diagrams.net https://*.youtube.com https://*.youtube-nocookie.com https://*.vimeo.com"
+    - DRAWIO=https://example.tbone.synology.me:4443/?embed=1&proto=json&spin=1
+    - REVISION_LIMIT=64
+    - DB_HOST=bookstack_apache_db:3306
+    - DB_DATABASE=${MYSQL_DATABASE:-bookstackapp}
+    - DB_USERNAME=${MYSQL_USER:-bookstack}
+    - DB_PASSWORD=${MYSQL_PASSWORD:-password}
+    - SESSION_LIFETIME=${SESSION_LIFETIME:-120}
+    - APP_LANG=zh_CN
+    - WKHTMLTOPDF=/usr/local/bin/wkhtmltopdf
+    - ALLOW_UNTRUSTED_SERVER_FETCHING=true
+    volumes:
+    - ${BOOKSTACK_ROOT:-./bookstack_app}/public/uploads:/var/www/bookstack/public/uploads
+    - ${BOOKSTACK_ROOT:-./bookstack_app}/storage/uploads:/var/www/bookstack/storage/uploads
+    - ${BOOKSTACK_BACKUP:-./bookstack_backup}:/bookstack_backup
+    ports:
+    - 8080:8080
+    restart: always
+ 
+
+  frpc:
+    image: rayruan/amd64_frp:${FRP_IMAGE_TAG:-latest}
+    container_name: bookstack_frpc
+    depends_on:
+    - bookstack_apache
+    environment:
+      PUID: 1000
+      PGID: 1000
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/${CFGS_DIR}/frpc.ini:/etc/frp/frpc.ini:ro
+      - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/frpc_entrypoint.sh:/app/frpc_entrypoint.sh:ro
+      - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/${CERTIFICATES_DIR}/client.crt:/client.crt:ro
+      - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/${CERTIFICATES_DIR}/client.key:/client.key:ro
+      - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/${CERTIFICATES_DIR}/rootCA.crt:/rootCA.crt:ro
+    entrypoint: /app/frpc_entrypoint.sh
+    restart: always
+    
