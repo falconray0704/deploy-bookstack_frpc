@@ -31,3 +31,21 @@ Install forllowing file:
 docker compose up -d
 ```
 
+# 4. Backup
+```bash
+
+docker exec -it -u root bookstack_apache_db /bin/bash
+mysqldump -u root -p bookstackapp > /bookstack_backup/bookstackapp.backup.sql
+
+docker exec -it -u root bookstack_apache /bin/bash
+tar -czf /bookstack_backup/bookstackapp-files-backup.tar.gz .env public/uploads storage/uploads
+```
+
+# 5. Restore
+```bash
+docker exec -it -u root bookstack_apache_db /bin/bash
+mysqldump -u root -p bookstackapp < /bookstack_backup/bookstackapp.backup.sql
+
+docker exec -it -u root bookstack_apache /bin/bash
+tar -xzf /bookstack_backup/bookstackapp-files-backup.tar.gz -C ./
+```
