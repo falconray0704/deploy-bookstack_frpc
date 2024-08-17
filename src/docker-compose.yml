@@ -1,55 +1,63 @@
-version: '3'
+version: '3.6'
 services:
-  bookstack_apache_db:
-    image: mysql:${MYSQL_RELEASE_VERSION:-8.0}
-    container_name: bookstack_apache_db
+  bookstack_db:
+    image: "lscr.io/linuxserver/mariadb:${MYSQL_RELEASE_VERSION:-10.11.8}"
+    container_name: "${SERVER_NAME:-bookstack}_db"
     environment:
-    - TZ=Asia/Shanghai
-    - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-password}
-    - MYSQL_DATABASE=${MYSQL_DATABASE:-bookstackapp}
-    - MYSQL_USER=${MYSQL_USER:-bookstack}
-    - MYSQL_PASSWORD=${MYSQL_PASSWORD:-password}
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Shanghai
+        #- TZ=Europe/London
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-password}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-bookstackapp}
+      - MYSQL_USER=${MYSQL_USER:-bookstack}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-password}
     volumes:
-    - ${BOOKSTACK_DB_ROOT:-./bookstack_db}/var/lib/mysql:/var/lib/mysql
-    - ${BOOKSTACK_BACKUP:-./bookstack_backup}:/bookstack_backup
-    restart: always
+      - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/${BOOKSTACK_DATAS_DIR}/bookstack_db_data:/config
+    networks:
+      - frpc_bookstack
+    restart: unless-stopped
 
 
-  bookstack_apache:
-    image: rayruan/bookstack_apache:${BOOKSTACKAPP_RELEASE_VERSION:-latest}
-    container_name: bookstack_apache
+  bookstack_app:
+    image: "linuxserver/bookstack:${BOOKSTACKAPP_RELEASE_VERSION:-24.05.3}"
+    container_name: "${SERVER_NAME}_app"
     depends_on:
-    - bookstack_apache_db
+      - bookstack_db
     environment:
-    - APP_URL=https://bookstack.example.com:4443
-    - ALLOWED_IFRAME_SOURCES="https://*.example.synology.me:4443 https://*.draw.io https://*.diagrams.net https://*.youtube.com https://*.youtube-nocookie.com https://*.vimeo.com"
-    - DRAWIO=https://example.tbone.synology.me:4443/?embed=1&proto=json&spin=1
-    - REVISION_LIMIT=64
-    - DB_HOST=bookstack_apache_db:3306
-    - DB_DATABASE=${MYSQL_DATABASE:-bookstackapp}
-    - DB_USERNAME=${MYSQL_USER:-bookstack}
-    - DB_PASSWORD=${MYSQL_PASSWORD:-password}
-    - SESSION_LIFETIME=${SESSION_LIFETIME:-120}
-    - APP_LANG=zh_CN
-    - WKHTMLTOPDF=/usr/local/bin/wkhtmltopdf
-    - ALLOW_UNTRUSTED_SERVER_FETCHING=true
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Shanghai
+      #- TZ=Europe/London
+      - APP_URL=${BOOKSTACK_APP_URL}
+      - DB_HOST=bookstack_db
+      - DB_PORT=3306
+      - DB_DATABASE=${MYSQL_DATABASE:-bookstackapp}
+      - DB_USERNAME=${MYSQL_USER:-bookstack}
+      - DB_PASSWORD=${MYSQL_PASSWORD:-password}
+      - FILE_UPLOAD_SIZE_LIMIT=819200
+      - SESSION_LIFETIME=${SESSION_LIFETIME:-120}
+      - APP_LANG=zh_CN
+      - WKHTMLTOPDF=/usr/local/bin/wkhtmltopdf
+      - ALLOW_UNTRUSTED_SERVER_FETCHING=true
+      - ALLOWED_IFRAME_SOURCES="https://*.example.synology.me:4443 https://*.draw.io https://*.diagrams.net https://*.youtube.com https://*.youtube-nocookie.com https://*.vimeo.com"
+      - DRAWIO=https://drowio.example.synology.me:4443/?embed=1&proto=json&spin=1
+      - REVISION_LIMIT=64
     volumes:
-    - ${BOOKSTACK_ROOT:-./bookstack_app}/public/uploads:/var/www/bookstack/public/uploads
-    - ${BOOKSTACK_ROOT:-./bookstack_app}/storage/uploads:/var/www/bookstack/storage/uploads
-    - ${BOOKSTACK_BACKUP:-./bookstack_backup}:/bookstack_backup
-    ports:
-    - 8080:8080
-    restart: always
- 
+      - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/${BOOKSTACK_DATAS_DIR}/bookstack_app_data:/config
+    networks:
+      - frpc_bookstack
+    restart: unless-stopped
+
 
   frpc:
-    image: rayruan/amd64_frp:${FRP_IMAGE_TAG:-latest}
-    container_name: bookstack_frpc
+    image: "rayruan/amd64_frp:${FRP_IMAGE_TAG:-0.51.3}"
+    container_name: "${SERVER_NAME}"
     depends_on:
-    - bookstack_apache
+    - bookstack_app
     environment:
-      PUID: 1000
-      PGID: 1000
+      - PUID=1000
+      - PGID=1000
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
@@ -58,6 +66,11 @@ services:
       - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/${CERTIFICATES_DIR}/client.crt:/client.crt:ro
       - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/${CERTIFICATES_DIR}/client.key:/client.key:ro
       - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/${CERTIFICATES_DIR}/rootCA.crt:/rootCA.crt:ro
+    networks:
+      - frpc_bookstack
     entrypoint: /app/frpc_entrypoint.sh
     restart: always
-    
+   
+networks:
+  frpc_bookstack:
+    name: "${SERVER_NAME}"

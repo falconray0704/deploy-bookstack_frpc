@@ -1,10 +1,10 @@
 # deploy-bookstack_frpc
 Deploy bookstack-vhost in LAN with frpc by docker compose.
 
-If you want to customize the location of deploment, configure following variables:
+If you want to customize the location of deploment, configure following variables in `.env`:
 
 * `INSTALL_ROOT_PATH` :  Parent path for deployment.
-* `INSTALL_DIR`: Directory for deployment at INSTALL_ROOT_PATH .
+* `SERVER_NAME`: Directory for deployment at INSTALL_ROOT_PATH .
 
 ```bash
 ./run.sh 

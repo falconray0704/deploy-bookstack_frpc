@@ -31,7 +31,6 @@ fi
 
 DEPLOY_ROOT=${INSTALL_ROOT_PATH}
 
-#SERVER_NAME=bookstack
 SERVER_DIR=${SERVER_NAME}
 SERVER_HOME=${DEPLOY_ROOT}/${SERVER_DIR}
 
@@ -42,7 +41,8 @@ EXEC_CMD=""
 EXEC_ITEMS_LIST=""
 
 
-deploy_bookstack_frpc()
+
+deploy_frpc_bookstack()
 {
     if [ ! -d ${DEPLOY_ROOT} ]
     then
@@ -55,19 +55,15 @@ deploy_bookstack_frpc()
     else
         echoY "Deploying ${SERVER_NAME}..."
         cp -a ./src ${SERVER_HOME}
-        mkdir -p ${SERVER_HOME}/bookstack_backup
-        mkdir -p ${SERVER_HOME}/datas/bs_db/var/lib/mysql
-        mkdir -p ${SERVER_HOME}/datas/bs_app/public/uploads
-        mkdir -p ${SERVER_HOME}/datas/bs_app/storage/uploads
 
+        mkdir -p ${SERVER_HOME}/datas
 
         mkdir -p ${SERVER_HOME}/${CERTIFICATES_DIR}
+
         echoG "${SERVER_NAME} has been deployed to ${DEPLOY_ROOT}/${SERVER_HOME} successfully."
+
 	echo ""
 	echo ""
-	echoY "Do following things before any configs!!!"
-        echoY "sudo chown www-data:www-data ${SERVER_HOME}/datas/bs_app/public/uploads"
-        echoY "sudo chown www-data:www-data ${SERVER_HOME}/datas/bs_app/storage/uploads"
 	echo ""
 
         cat ./src/README.md
@@ -79,7 +75,7 @@ usage_func()
 
     echoY "Usage:"
     echoY './run.sh -c <cmd> -l "<item list>"'
-    echoY "eg:\n./run.sh -c deploy -l \"${SERVER_NAME}\""
+    echoY "eg:\n./run.sh -c deploy -l frpc_bookstack"
 
     echoC "Supported cmd:"
     echo "${SUPPORTED_CMD}"

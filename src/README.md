@@ -1,51 +1,65 @@
-# 1. Configure of frpc serving for drawio in LAN
+# 1. Configurations for initialization
 
-## 1.1 Specify following variables in `.env` file for your domain.
+## 1.1 Specify following variables in `.env` file for all data storage of bookstack application which including database.
 
+* `BOOKSTACK_DATAS_DIR` : Datas root directory.
 
-## 1.2 Specify following variables in `cfgs/frpc.ini` file for your domain.
+## 1.2 Specify following variables in `.env` file for accessing of database.
+
+* `MYSQL_DATABASE` : Name of database for bookstack.
+* `MYSQL_USER` : User name for database access by bookstack app.
+* `MYSQL_PASSWORD` : Password of `MYSQL_USER` .
+* `MYSQL_ROOT_PASSWORD` : Password of Root for database initialization.
+
+## 1.3 Specify following variables in `.env` file for bookstack domain.
+
+* `BOOKSTACK_APP_URL` : bookstack domain, eg: https://bookstack.example.com
+
+## 1.4 Specify following variables in `cfgs/frpc.ini` file for frp.
 Just refer to official document.
 The most required variables are:
 
-* `token` : token for authentication between frpc and frps.
+* `server_addr` : Public IP address of your server.
+* `server_port` : Port of frps listens for frpc connection.
+
+* `token` : token for authentication between frpc and frps, must be same as Frps's configuration.
 * `subdomain` : 3rd subdomain for frps routing (eg: drawio for bookstack.domain.com).
 * `custom_domains` : full domain for frps routing (eg: bookstack.domain.com).
 
 
-# 2. Install certificates
+# 2. Initial environments for first time booting
+```bash
+./1_init.sh
+```
 
-Install certificates for tls between frpc and frps to `$INSTALL_ROOT_PATH`/`INSTALL_DIR`/`CERTIFICATES_DIR` which defined in `.env` file. 
+# 3. Install certificates
 
-## 2.1 Obtain certificates
+Install certificates for tls between frpc and frps to `$INSTALL_ROOT_PATH`/`SERVER_NAME`/`CERTIFICATES_DIR` which defined in `.env` file.
 
-Refer `https://github.com/falconray0704/deploy-drawio_frps/blob/main/src/README.md` to generate selfsigned certificates.
+
+## 3.1 Obtain certificates
+
+Refer `https://github.com/falconray0704/deploy-bookstack_frps/blob/main/src/README.md` to generate selfsigned certificates.
 Install forllowing file:
 
 * `client.crt`
 * `client.key`
 * `rootCA.crt`
 
-# 3. Launch:
+# 4. Launch:
 
 ```bash
 docker compose up -d
 ```
 
-# 4. Backup
-```bash
+# 5. Tips
+PHP has upload limitation of upload large file, fix it with following instructions.
 
-docker exec -it -u root bookstack_apache_db /bin/bash
-mysqldump -u root -p bookstackapp > /bookstack_backup/bookstackapp.backup.sql
+In `datas/bookstack_app_data/php/php-local.ini`, revise following variables to your demand
 
-docker exec -it -u root bookstack_apache /bin/bash
-tar -czf /bookstack_backup/bookstackapp-files-backup.tar.gz .env public/uploads storage/uploads
-```
 
-# 5. Restore
-```bash
-docker exec -it -u root bookstack_apache_db /bin/bash
-mysqldump -u root -p bookstackapp < /bookstack_backup/bookstackapp.backup.sql
+```php
+upload_max_filesize = 100M
+post_max_size = 100M
 
-docker exec -it -u root bookstack_apache /bin/bash
-tar -xzf /bookstack_backup/bookstackapp-files-backup.tar.gz -C ./
 ```
