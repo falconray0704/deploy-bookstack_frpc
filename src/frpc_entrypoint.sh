@@ -4,7 +4,7 @@ set -o nounset
 set -o errexit
 
 which frps
-ls -al /etc/frp/frpc.ini
-cat /etc/frp/frpc.ini
-/usr/bin/frpc -c /etc/frp/frpc.ini
+ls -al /etc/frp/frpc.toml
+cat /etc/frp/frpc.toml
+/usr/bin/frpc -c /etc/frp/frpc.toml
 

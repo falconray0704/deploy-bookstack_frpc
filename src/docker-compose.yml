@@ -51,7 +51,7 @@ services:
 
 
   frpc:
-    image: "rayruan/amd64_frp:${FRP_IMAGE_TAG:-0.51.3}"
+    image: "rayruan/amd64_frp:${FRP_IMAGE_TAG:-0.60.0}"
     container_name: "${SERVER_NAME}"
     depends_on:
     - bookstack_app
@@ -61,11 +61,11 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/${CFGS_DIR}/frpc.ini:/etc/frp/frpc.ini:ro
+      - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/${CFGS_DIR}/frpc.toml:/etc/frp/frpc.toml:ro
       - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/frpc_entrypoint.sh:/app/frpc_entrypoint.sh:ro
       - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/${CERTIFICATES_DIR}/client.crt:/client.crt:ro
       - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/${CERTIFICATES_DIR}/client.key:/client.key:ro
-      - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/${CERTIFICATES_DIR}/rootCA.crt:/rootCA.crt:ro
+      - ${INSTALL_ROOT_PATH}/${SERVER_NAME}/${CERTIFICATES_DIR}/rootCA.crt:/ca.crt:ro
     networks:
       - frpc_bookstack
     entrypoint: /app/frpc_entrypoint.sh
